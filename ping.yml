@@ -1,0 +1,6 @@
+- name: Ping docker target
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: ping
+      ansible.builtin.ping:
