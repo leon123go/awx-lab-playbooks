@@ -6,9 +6,9 @@
       ansible.builtin.file:
         path: /opt/myapp
         state: directory
-        mode:'0755'
+        mode: '0755'
 
     - name: create version file
       ansible.builtin.copy:
         dest: /opt/myapp/version.txt
-        content:"deployed by AWX\n"
+        content: "deployed by AWX\n"
