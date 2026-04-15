@@ -1,0 +1,14 @@
+- name: Deploy test file
+  hosts: all
+  become: yes
+  tasks:
+    - name: create app directory
+      ansible.builtin.file:
+        path: /opt/myapp
+        state: directory
+        mode:'0755'
+
+    - name: create version file
+      ansible.builtin.copy:
+        dest: /opt/myapp/version.txt
+        content:"deployed by AWX\n"
