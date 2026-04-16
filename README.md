@@ -1,60 +1,60 @@
 # AWX Lab Playbooks
 
-## Project Purpose
+## 專案目的
 
-This repository contains simple Ansible playbooks for validating AWX or Ansible execution against Linux targets.
+這個 repository 提供簡單的 Ansible playbook，用來驗證 AWX 或 Ansible 是否能正確對 Linux 目標主機執行任務。
 
-- `ping.yml`: verifies Ansible connectivity to target hosts.
-- `deploy_test.yml`: performs a minimal deployment test by creating `/opt/myapp/version.txt`.
-- `check_account_permissions.yml`: checks the execution account, groups, sudo capability, and selected path permissions without changing the target.
+- `ping.yml`：驗證 Ansible 是否能連線到目標主機。
+- `deploy_test.yml`：建立 `/opt/myapp/version.txt`，執行最小化部署測試。
+- `check_account_permissions.yml`：檢查執行帳號、群組、sudo 能力，以及指定路徑權限，不會修改目標主機。
 
-These playbooks are intended for lab validation, AWX job template testing, and basic Ansible target readiness checks.
+這些 playbook 適合用於 lab 驗證、AWX Job Template 測試，以及基本的 Ansible 目標主機就緒檢查。
 
-## Run ping.yml
+## 執行 ping.yml
 
-Create an inventory file:
+建立 inventory 檔案：
 
 ```ini
 [target]
 localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python3
 ```
 
-Run the playbook:
+執行 playbook：
 
 ```bash
 ansible-playbook -i inventory.ini ping.yml
 ```
 
-Expected result:
+預期結果：
 
 ```text
 ok: [localhost]
 ```
 
-The `ping.yml` playbook uses the Ansible ping module. It checks whether Ansible can connect to the target and run modules successfully.
+`ping.yml` playbook 使用 Ansible ping module，會檢查 Ansible 是否能連線到目標主機，並成功執行 module。
 
-## Run deploy_test.yml
+## 執行 deploy_test.yml
 
-Create an inventory file:
+建立 inventory 檔案：
 
 ```ini
 [target]
 localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python3
 ```
 
-Run the playbook with privilege escalation:
+使用權限提升執行 playbook：
 
 ```bash
 sudo ansible-playbook -i inventory.ini deploy_test.yml
 ```
 
-For remote Linux targets, use:
+如果是遠端 Linux 目標主機，使用：
 
 ```bash
 ansible-playbook -i inventory.ini deploy_test.yml --become
 ```
 
-Verify the deployment:
+驗證部署結果：
 
 ```bash
 test -d /opt/myapp
@@ -62,78 +62,78 @@ test -f /opt/myapp/version.txt
 cat /opt/myapp/version.txt
 ```
 
-Expected output:
+預期輸出：
 
 ```text
 deployed by AWX
 ```
 
-## Run check_account_permissions.yml
+## 執行 check_account_permissions.yml
 
-Create an inventory file:
+建立 inventory 檔案：
 
 ```ini
 [target]
 localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python3
 ```
 
-Run the playbook:
+執行 playbook：
 
 ```bash
 ansible-playbook -i inventory.ini check_account_permissions.yml
 ```
 
-The playbook reports:
+這個 playbook 會回報：
 
-- Current execution user
-- Account identity
-- Account groups
-- Passwordless sudo status
-- `/tmp` and `/opt` metadata
-- `/tmp` and `/opt` write permission for the current user
+- 目前執行使用者
+- 帳號身分資訊
+- 帳號所屬群組
+- 免密碼 sudo 狀態
+- `/tmp` 和 `/opt` metadata
+- 目前使用者對 `/tmp` 和 `/opt` 的寫入權限
 
-This playbook is read-only and does not create, update, or delete files.
+這個 playbook 是唯讀檢查，不會建立、更新或刪除任何檔案。
 
-## Troubleshooting
+## 排錯方式
 
 ### ansible-playbook: command not found
 
-Install Ansible.
+安裝 Ansible。
 
-Ubuntu or Debian:
+Ubuntu 或 Debian：
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y ansible python3
 ```
 
-RHEL, Rocky Linux, or AlmaLinux:
+RHEL、Rocky Linux 或 AlmaLinux：
 
 ```bash
 sudo dnf install -y ansible-core python3
 ```
 
-### Missing sudo password
+### 缺少 sudo 密碼
 
-Run with become password prompt:
+使用 become password prompt 執行：
 
 ```bash
 ansible-playbook -i inventory.ini deploy_test.yml --become --ask-become-pass
 ```
 
-### Permission denied while creating /opt/myapp
+### 建立 /opt/myapp 時出現 Permission denied
 
-The `deploy_test.yml` playbook writes to `/opt/myapp`, so the target user needs sudo privileges.
+`deploy_test.yml` playbook 會寫入 `/opt/myapp`，因此目標使用者需要 sudo 權限。
 
-Check sudo access:
+檢查 sudo 存取權：
 
 ```bash
 ansible all -i inventory.ini -m command -a 'whoami' --become
 ```
 
-### Python interpreter not found
+### 找不到 Python interpreter
 
-Set the Python interpreter in the inventory:
+在 inventory 中指定 Python interpreter：
 
 ```ini
 [target]
@@ -142,21 +142,21 @@ localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python3
 
 ### Inventory does not match any hosts
 
-Check inventory syntax:
+檢查 inventory 語法：
 
 ```bash
 ansible-inventory -i inventory.ini --list
 ```
 
-For quick local testing without an inventory file:
+如果要快速在本機測試且不建立 inventory 檔案：
 
 ```bash
 ansible-playbook --inventory 'localhost,' --connection local ping.yml
 ```
 
-### Syntax check
+### 語法檢查
 
-Run syntax checks before execution:
+執行前先做 syntax check：
 
 ```bash
 ansible-playbook -i inventory.ini ping.yml --syntax-check
@@ -164,7 +164,7 @@ ansible-playbook -i inventory.ini deploy_test.yml --syntax-check
 ansible-playbook -i inventory.ini check_account_permissions.yml --syntax-check
 ```
 
-For more details:
+需要更多排錯資訊時：
 
 ```bash
 ansible-playbook -i inventory.ini ping.yml --syntax-check -vvv
