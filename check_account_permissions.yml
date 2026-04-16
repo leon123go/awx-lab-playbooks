@@ -1,6 +1,6 @@
 - name: Check account permissions
   hosts: all
-  gather_facts: yes
+  gather_facts: false
   vars:
     permission_check_paths:
       - /tmp
@@ -14,7 +14,7 @@
             msg:
               - "Checking account permissions on {{ inventory_hostname }}"
               - "Ansible user: {{ ansible_user | default('not set') }}"
-              - "Connection user from facts: {{ ansible_user_id | default('unknown') }}"
+              - "Gather facts: disabled to avoid long waits before stdout appears"
 
         - name: Get current execution user
           ansible.builtin.command:
@@ -41,6 +41,8 @@
         - name: Check non-interactive sudo permission
           ansible.builtin.command:
             argv:
+              - timeout
+              - "5"
               - sudo
               - -n
               - "true"
