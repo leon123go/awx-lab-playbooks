@@ -1,20 +1,27 @@
 - name: Check account permissions
   hosts: all
   gather_facts: false
+  any_errors_fatal: false
   vars:
     permission_check_paths:
       - /tmp
       - /opt
+    connection_check_timeout: 15
 
   tasks:
     - name: Run account permission checks
       block:
+        - name: Check Ansible connection before permission checks
+          ansible.builtin.wait_for_connection:
+            timeout: "{{ connection_check_timeout }}"
+
         - name: Show check target
           ansible.builtin.debug:
             msg:
               - "Checking account permissions on {{ inventory_hostname }}"
               - "Ansible user: {{ ansible_user | default('not set') }}"
               - "Gather facts: disabled to avoid long waits before stdout appears"
+              - "Connection check timeout: {{ connection_check_timeout }} seconds"
 
         - name: Get current execution user
           ansible.builtin.command:
@@ -41,14 +48,14 @@
         - name: Check non-interactive sudo permission
           ansible.builtin.command:
             argv:
-              - timeout
-              - "5"
               - sudo
               - -n
               - "true"
           register: sudo_check
           changed_when: false
           failed_when: false
+          async: 10
+          poll: 10
 
         - name: Check target path metadata
           ansible.builtin.stat:
