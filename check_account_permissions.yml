@@ -1,0 +1,107 @@
+- name: Check account permissions
+  hosts: all
+  gather_facts: yes
+  vars:
+    permission_check_paths:
+      - /tmp
+      - /opt
+
+  tasks:
+    - name: Run account permission checks
+      block:
+        - name: Show check target
+          ansible.builtin.debug:
+            msg:
+              - "Checking account permissions on {{ inventory_hostname }}"
+              - "Ansible user: {{ ansible_user | default('not set') }}"
+              - "Connection user from facts: {{ ansible_user_id | default('unknown') }}"
+
+        - name: Get current execution user
+          ansible.builtin.command:
+            argv:
+              - whoami
+          register: current_user
+          changed_when: false
+
+        - name: Get current account identity
+          ansible.builtin.command:
+            argv:
+              - id
+          register: account_identity
+          changed_when: false
+
+        - name: Get current account groups
+          ansible.builtin.command:
+            argv:
+              - id
+              - -nG
+          register: account_groups
+          changed_when: false
+
+        - name: Check non-interactive sudo permission
+          ansible.builtin.command:
+            argv:
+              - sudo
+              - -n
+              - "true"
+          register: sudo_check
+          changed_when: false
+          failed_when: false
+
+        - name: Check target path metadata
+          ansible.builtin.stat:
+            path: "{{ item }}"
+          loop: "{{ permission_check_paths }}"
+          register: path_metadata
+
+        - name: Check target path write permission
+          ansible.builtin.command:
+            argv:
+              - test
+              - -w
+              - "{{ item }}"
+          loop: "{{ permission_check_paths }}"
+          register: path_write_checks
+          changed_when: false
+          failed_when: false
+
+        - name: Show account permission summary
+          ansible.builtin.debug:
+            msg:
+              - "Current user: {{ current_user.stdout }}"
+              - "Identity: {{ account_identity.stdout }}"
+              - "Groups: {{ account_groups.stdout }}"
+              - "Passwordless sudo: {{ 'yes' if sudo_check.rc == 0 else 'no' }}"
+              - "Sudo check rc: {{ sudo_check.rc }}"
+              - "Sudo check stderr: {{ sudo_check.stderr | default('') }}"
+
+        - name: Show path permission summary
+          ansible.builtin.debug:
+            msg:
+              - "Path: {{ item.item }}"
+              - "Exists: {{ item.stat.exists }}"
+              - "Directory: {{ item.stat.isdir | default(false) }}"
+              - "Owner: {{ item.stat.pw_name | default('unknown') }}"
+              - "Group: {{ item.stat.gr_name | default('unknown') }}"
+              - "Mode: {{ item.stat.mode | default('unknown') }}"
+          loop: "{{ path_metadata.results }}"
+
+        - name: Show path write check summary
+          ansible.builtin.debug:
+            msg:
+              - "Path: {{ item.item }}"
+              - "Writable by current user: {{ 'yes' if item.rc == 0 else 'no' }}"
+              - "Write check rc: {{ item.rc }}"
+          loop: "{{ path_write_checks.results }}"
+
+      rescue:
+        - name: Report permission check failure
+          ansible.builtin.debug:
+            msg:
+              - "Account permission check failed on {{ inventory_hostname }}"
+              - "Task: {{ ansible_failed_task.name | default('unknown') }}"
+              - "Result: {{ ansible_failed_result | default({}) }}"
+
+        - name: Fail account permission check
+          ansible.builtin.fail:
+            msg: "Account permission check failed. Review the debug output above."
